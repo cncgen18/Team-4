@@ -3,6 +3,7 @@ package serverStuff;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,14 +11,17 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
-public class LoggingForm {
+public class LoggingForm 
+{
 	
 	private static Map<FSPair, Integer> cache = new HashMap<FSPair, Integer>();
+	private static ArrayList<FSPair> memory = new ArrayList<FSPair>();
 	private static int cacheLimit; 
 	private static ServerSocket  server;
 	private static Socket socket;
 	private static DataInputStream  in;
 	private static DataOutputStream out;
+	File f = new File("logForm.txt");
 	
 	
 	public static void main(String[] args )
@@ -26,7 +30,9 @@ public class LoggingForm {
 		System.out.println("How many files will be in the cache?");
 		Scanner sc = new Scanner(System.in);
 		int i = sc.nextInt();
+		sc.close();
 		setCacheLimit(i);
+		logRequest();
 		try 
 		{
 			server = new ServerSocket(1234);
@@ -78,6 +84,20 @@ public class LoggingForm {
 		}
 	}
 	
+	public static FSPair memLookup(String fileName)
+	{
+		FSPair possible = new FSPair("error");
+		for (FSPair i : memory)
+		{
+			if (fileName.equalsIgnoreCase(i.getName()))
+			{
+				possible.setName(fileName);
+				possible.setfile(i.getFile());
+			}
+		}
+		return possible;
+	}
+	
 	public static FSPair cacheLookup(String fileName)
 	{
 		Set<FSPair> set = cache.keySet();
@@ -123,7 +143,8 @@ public class LoggingForm {
 					if (size < 1000) size*=1000;
 					if (size > 100000) size = size % 100000;
 				}
-				PrintWriter writer = new PrintWriter(str + ".txt");
+				File f = new File(str + ".txt");
+				PrintWriter writer = new PrintWriter(f);
 				int x = 0;
 				while (x < size)
 				{
@@ -131,6 +152,7 @@ public class LoggingForm {
 					 writer.print(alphabet.charAt((int)(rand3%26)));
 					x++;
 				}
+				memory.add(new FSPair(str, f));
 				writer.close();
 				str = br.readLine();
 			}
@@ -141,19 +163,22 @@ public class LoggingForm {
 			System.out.println("Something went wrong with the file.");
 		}
 	}
-}
-	
-	
-	
+
+	public static  void logRequest()
+	{
 		
-		//File f = new File("logForm.txt");
-		
-		//Might be better to have all the values imported so I only have one PrintWriter
-		/*and no worries about accidentally deleting what's in this output file.
-		PrintWriter logger = new PrintWriter("logForm.txt");
+		try 
+		{
+			
+			PrintWriter logger;
+			logger = new PrintWriter(f);
+			
 		int start = 0, end = 10, size = 12400;
+		
 		String url = "http://google.com";
-		Boolean cacheHit = true, find = true;
+		logger.print(url);
+		Boolean cacheHit = true;
+		Boolean find = true;
 		String output = "";
 		output+=url + "\t";
 		output+=Integer.toString(start) + "\t";
@@ -163,13 +188,18 @@ public class LoggingForm {
 		else output+="miss\t";
 		if (find) output+="200";
 		else output +="400";
-		logger.println(output);
-		///Ideally, this would be written in the server code.
-		//Assume int start = Start time of handling request
-		//Assume int end = Time finished
-		//Assume String url = url of page
-		//Assume int size = size of file*/
+		logger.write(output+ "\n");
+		logger.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
 	
+}
+	
+					
 
 
 

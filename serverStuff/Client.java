@@ -28,6 +28,10 @@ public class Client {
 				new Thread(r).start();
 			}
 		}
+		catch (IOException e)
+		{
+			
+		}
 			
 			//String page = sc.next();
 			//add HTML stuff

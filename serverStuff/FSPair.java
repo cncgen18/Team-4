@@ -25,4 +25,13 @@ public class FSPair
 	{
 		return file;
 	}
+	public void setName(String name)
+	{
+		this.fileName = name;
+	}
+	public void setfile(File f)
+	{
+		this.file = f;
+	}
+	
 }
