@@ -4,9 +4,9 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
@@ -19,9 +19,7 @@ public class LoggingForm
 	private static int cacheLimit; 
 	private static ServerSocket  server;
 	private static Socket socket;
-	private static DataInputStream  in;
-	private static DataOutputStream out;
-	File f = new File("logForm.txt");
+	private static File f = new File("logForm.txt");
 	
 	
 	public static void main(String[] args )
@@ -32,10 +30,10 @@ public class LoggingForm
 		int i = sc.nextInt();
 		sc.close();
 		setCacheLimit(i);
-		logRequest();
+		
 		try 
 		{
-			server = new ServerSocket(1234);
+			server = new ServerSocket(1234);  //1234 is a dummy socket number and should be changed.
 			while(true)
 			{
 				socket = server.accept();
@@ -45,51 +43,57 @@ public class LoggingForm
 		}
 		catch (IOException e) {}	
 	}
+	
 	public static void setCacheLimit(int i )
 	{
 		cacheLimit = i;
 	}
+	
 	public static void reOrder(FSPair newEntry)
 	{
-		if (cache.containsKey(newEntry))
+		if (cache.containsKey(newEntry))  //if reOrder was called and the file is already in the cache...
 		{	
 			int border = cache.get(newEntry);
 			
-			for (FSPair i : cache.keySet())
+			for (FSPair i : cache.keySet())  //increase the ints of everything but said file by one
 			{
-				if (cache.get(i) < border)
+				if (cache.get(i) ==cacheLimit)
 				{
-					cache.replace(i, cache.get(i), cache.get(i)+1);
 					
 				}
-				else if (cache.get(i) == border)
+				else if (cache.get(i) < border)
+				{
+					cache.replace(i, cache.get(i), cache.get(i)+1);  
+					
+				}
+				else if (cache.get(i) == border)  //and reset the file to the value one.
 				{ 
 					cache.replace(i, cache.get(i), 1);
 				}
 			}
 		}
-		else
+		else  //if the file isn't in the cache...
 		{
 			if (cache.size() >= cacheLimit)
 			{
 				for (FSPair i : cache.keySet())
 				{
-					if (cache.get(i) == cacheLimit)
-						cache.remove(i);
+					if (cache.get(i) == cacheLimit)  //Find the item in the cache that has gone the longes without
+						cache.remove(i);  			//being called up and delete it from the cache.
 				}
 			}
 			for ( FSPair i : cache.keySet())
-				cache.replace(i, cache.get(i), cache.get(i)+1);
-			cache.put(newEntry, 1);	
+				cache.replace(i, cache.get(i), cache.get(i)+1);  //Everything remaining goes up by one
+			cache.put(newEntry, 1);	//add the new guy
 		}
 	}
 	
 	public static FSPair memLookup(String fileName)
-	{
+	{//This will look through the memory array list for the fileName.
 		FSPair possible = new FSPair("error");
 		for (FSPair i : memory)
 		{
-			if (fileName.equalsIgnoreCase(i.getName()))
+			if (fileName.equalsIgnoreCase(i.getName()))  //when found, set the name and file to the object
 			{
 				possible.setName(fileName);
 				possible.setfile(i.getFile());
@@ -101,20 +105,20 @@ public class LoggingForm
 	public static FSPair cacheLookup(String fileName)
 	{
 		Set<FSPair> set = cache.keySet();
-		Set<String> nameSet = new HashSet<String>();
+		Set<String> nameSet = new HashSet<String>();  //make a set for the names in the cache
 		for (FSPair i : set)
 		{
-			nameSet.add(i.getName());
+			nameSet.add(i.getName());  //fill up the nameSet.
 		}
-		if (!nameSet.contains(fileName))
+		if (!nameSet.contains(fileName))  //if the file isn't in the nameSet
 		{
 			FSPair errorPair = new FSPair("error");
-			return errorPair;
+			return errorPair;  //return error
 		}
-		else
+		else  //if it's in there
 		{
 			FSPair x = null;
-			for (FSPair i : set)
+			for (FSPair i : set)  //find it and return it.
 			{
 				if (i.getName().equalsIgnoreCase(fileName))
 				{
@@ -135,25 +139,25 @@ public class LoggingForm
 			String alphabet = "abcdefghijklmnopqrstuvwxyz";
 			while (str!=null)
 			{
-				long rand1 = System.currentTimeMillis();  //Random file size
+				long rand1 = System.currentTimeMillis();  //Use the current time to get a random file size
 				long rand2 = System.currentTimeMillis();
-				int size = (int)((rand1 * rand2) % 10000);
-				while (size >100000 || size <1000)
+				int size = (int)((rand1 * rand2) % 10000);  //mod by 100000 to keep within range.
+				while (size >100000 || size <1000) //if it's out of range
 				{
-					if (size < 1000) size*=1000;
-					if (size > 100000) size = size % 100000;
+					if (size < 1000) size*=1000; //multiply by 1K if it's too small
+					if (size > 100000) size = size % 100000; //divide by 100K if too big.
 				}
-				File f = new File(str + ".txt");
-				PrintWriter writer = new PrintWriter(f);
+				File newInput = new File(str + ".txt");  //make file for memory.
+				PrintWriter writer = new PrintWriter(newInput);
 				int x = 0;
-				while (x < size)
+				while (x < size)  //get size number of random letters and populate file with them.
 				{
 					 long rand3 = (long)(Math.random() * System.currentTimeMillis());
 					 writer.print(alphabet.charAt((int)(rand3%26)));
 					x++;
 				}
-				memory.add(new FSPair(str, f));
 				writer.close();
+				memory.add(new FSPair(str, newInput));  //When the file's populated, add it to memory
 				str = br.readLine();
 			}
 			br.close();
@@ -164,37 +168,32 @@ public class LoggingForm
 		}
 	}
 
-	public static  void logRequest()
-	{
-		
+	public static  void logRequest(String name, Date start, Date end, int size, boolean hitMiss, String status)
+	{//This will print the above information to the logFile.
 		try 
-		{
-			
+		{	
 			PrintWriter logger;
-			logger = new PrintWriter(f);
-			
-		int start = 0, end = 10, size = 12400;
-		
-		String url = "http://google.com";
-		logger.print(url);
-		Boolean cacheHit = true;
-		Boolean find = true;
-		String output = "";
-		output+=url + "\t";
-		output+=Integer.toString(start) + "\t";
-		output+=Integer.toString(end) + "\t";
-		output+=Integer.toString(size) + "\t";
-		if (cacheHit) output+= "hit\t";
-		else output+="miss\t";
-		if (find) output+="200";
-		else output +="400";
-		logger.write(output+ "\n");
-		logger.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
+			logger = new PrintWriter(f);  
+			String output = "";
+			output+=name;
+			output+="\t";
+			output+=start.toString().substring(11, 19);
+			output+="\t";
+			output+=end.toString().substring(11, 19);
+			output+="\t";
+			output+=size;
+			output+="\t";
+			if (hitMiss)output+="hit";
+			else output+="miss";
+			output+="\t";
+			output+=status;
+			logger.write(output+ "\n");
+			logger.close();
+		} 
+		catch (FileNotFoundException e) 
+		{
 			e.printStackTrace();
 		}
-
 	}
 	
 }

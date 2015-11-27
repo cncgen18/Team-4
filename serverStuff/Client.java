@@ -1,7 +1,6 @@
 package serverStuff;
 
 import java.io.*;
-import java.util.List;
 import java.util.Scanner;
 import java.net.ServerSocket;
 import java.net.Socket;
