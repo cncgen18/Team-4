@@ -10,19 +10,21 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
 
-public class LoggingForm 
+public class Server
 {
-	
+
 	private static Map<FSPair, Integer> cache = new HashMap<FSPair, Integer>();
 	private static ArrayList<FSPair> memory = new ArrayList<FSPair>();
-	private static int cacheLimit; 
+	private static int cacheLimit;
 	private static ServerSocket  server;
-	private static Socket socket;
 	private static File f = new File("logForm.txt");
-	
-	
-	public static void main(String[] args )
+	private static String outputString = "";
+
+
+
+	public static void main(String[] args)
 	{
 		fileGenerator();
 		System.out.println("How many files will be in the cache?");
@@ -30,44 +32,44 @@ public class LoggingForm
 		int i = sc.nextInt();
 		sc.close();
 		setCacheLimit(i);
-		
-		try 
+
+		try
 		{
-			server = new ServerSocket(1234);  //1234 is a dummy socket number and should be changed.
+			server = new ServerSocket(8241);
 			while(true)
 			{
-				socket = server.accept();
-				RequestResponder rr = new RequestResponder(socket);
+				Socket client = server.accept();
+				RequestResponder rr = new RequestResponder(client);
 				new Thread(rr).start();
 			}
 		}
-		catch (IOException e) {}	
+		catch (IOException e) {}
 	}
-	
+
 	public static void setCacheLimit(int i )
 	{
 		cacheLimit = i;
 	}
-	
+
 	public static void reOrder(FSPair newEntry)
 	{
 		if (cache.containsKey(newEntry))  //if reOrder was called and the file is already in the cache...
-		{	
+		{
 			int border = cache.get(newEntry);
-			
+
 			for (FSPair i : cache.keySet())  //increase the ints of everything but said file by one
 			{
 				if (cache.get(i) ==cacheLimit)
 				{
-					
+
 				}
 				else if (cache.get(i) < border)
 				{
-					cache.replace(i, cache.get(i), cache.get(i)+1);  
-					
+					cache.replace(i, cache.get(i), cache.get(i)+1);
+
 				}
 				else if (cache.get(i) == border)  //and reset the file to the value one.
-				{ 
+				{
 					cache.replace(i, cache.get(i), 1);
 				}
 			}
@@ -87,7 +89,7 @@ public class LoggingForm
 			cache.put(newEntry, 1);	//add the new guy
 		}
 	}
-	
+
 	public static FSPair memLookup(String fileName)
 	{//This will look through the memory array list for the fileName.
 		FSPair possible = new FSPair("error");
@@ -101,7 +103,7 @@ public class LoggingForm
 		}
 		return possible;
 	}
-	
+
 	public static FSPair cacheLookup(String fileName)
 	{
 		Set<FSPair> set = cache.keySet();
@@ -128,13 +130,13 @@ public class LoggingForm
 			return x;
 		}
 	}
-	
+
 	public static void fileGenerator()
-	{		
+	{
 		try
 		{
 			BufferedReader br = new BufferedReader(new FileReader("fileGeneration.txt"));
-			
+
 			String str = br.readLine();
 			String alphabet = "abcdefghijklmnopqrstuvwxyz";
 			while (str!=null)
@@ -150,11 +152,18 @@ public class LoggingForm
 				File newInput = new File(str + ".txt");  //make file for memory.
 				PrintWriter writer = new PrintWriter(newInput);
 				int x = 0;
+				int y = 0;
 				while (x < size)  //get size number of random letters and populate file with them.
 				{
 					 long rand3 = (long)(Math.random() * System.currentTimeMillis());
 					 writer.print(alphabet.charAt((int)(rand3%26)));
-					x++;
+					 x++;
+					 y++;
+					 if (y==100)
+					 {
+					 	writer.print('\n');
+					 	y=0;
+					 }
 				}
 				writer.close();
 				memory.add(new FSPair(str, newInput));  //When the file's populated, add it to memory
@@ -170,11 +179,11 @@ public class LoggingForm
 
 	public static  void logRequest(String name, Date start, Date end, int size, boolean hitMiss, String status)
 	{//This will print the above information to the logFile.
-		try 
-		{	
-			PrintWriter logger;
-			logger = new PrintWriter(f);  
-			String output = "";
+		try
+		{
+			PrintWriter pw = new PrintWriter(f);
+			pw.print(outputString);
+			String output= "";
 			output+=name;
 			output+="\t";
 			output+=start.toString().substring(11, 19);
@@ -187,18 +196,114 @@ public class LoggingForm
 			else output+="miss";
 			output+="\t";
 			output+=status;
-			logger.write(output+ "\n");
-			logger.close();
-		} 
-		catch (FileNotFoundException e) 
+			pw.write(output+ "\n");
+			outputString +=output + "\n";
+			pw.close();
+		}
+		catch (IOException e)
 		{
 			e.printStackTrace();
 		}
 	}
-	
+
 }
-	
-					
+
+class RequestResponder implements Runnable
+{
+	private Socket client;
+	private DataInputStream in;
+	private PrintWriter out;
+
+	private static Semaphore cacheSemaphore = new Semaphore(1, true);
+	private static Semaphore logSemaphore = new Semaphore(1, true);
+
+
+
+	private FileInputStream fis;
+	private BufferedInputStream bis;
+	private OutputStream os;
+	private Date startTime;
+	private Date endTime;
+	private boolean cacheHit;
+	private String message = "200";
+
+	public RequestResponder(Socket socket)
+	{
+		this.client = socket;
+	}
+	public void run()
+	{
+		startTime = new Date();
+
+		try
+		{
+			DataInputStream in = new DataInputStream(client.getInputStream());
+        	DataOutputStream out = new DataOutputStream(client.getOutputStream());
+			String pageName = in.readUTF();  //gets name of file that user wants
+			FSPair possible = null;  //This is what's passed back.
+			cacheSemaphore.acquire();
+			possible = Server.cacheLookup(pageName);  //This is what's returned from the cacheLookup
+			cacheSemaphore.release();
+
+
+			if(possible.getName().equalsIgnoreCase("error"))  //cache Lookup failure
+			{
+				possible = Server.memLookup(pageName);  //look in memory
+				if(possible.getName().equalsIgnoreCase("error"))  //If that's an error too
+				{
+					message = "404";
+					//possible.setName("404 Error");  //Make possible have a 404 error.
+
+				}
+				else  //If it was found in memory
+				{
+					cacheSemaphore.acquire();
+					Server.reOrder(possible);  //reorder cache
+					cacheSemaphore.release();
+				}
+			}  //if it was in the cache...
+			else
+			{
+				cacheHit = true;
+				cacheSemaphore.acquire();
+				Server.reOrder(possible);  //reorder cache
+				cacheSemaphore.release();
+			}
+			//output it through the socket
+
+			if (message.equalsIgnoreCase("200"))
+			{
+				File f = possible.getFile();  //print it through the socket byte by byte
+				BufferedReader fRead = new BufferedReader(new FileReader(f));
+				String line = fRead.readLine();
+				while(line !=null)
+				{
+					out.writeUTF(line);
+					line = fRead.readLine();
+				}
+			}
+			else
+			{
+				out.writeUTF("Error 404 -  File Not Found.");
+			}
+	        in.close();
+	        out.close();
+	        endTime = new Date();
+			logSemaphore.acquire();
+			Server.logRequest(possible.getName(), startTime, endTime, (int)possible.getFile().length(),
+								cacheHit, message);  //logs request for file
+			logSemaphore.release();
+
+		}
+		catch (Exception e)
+		{
+
+		}
+
+
+	}
+}
+
 
 
 

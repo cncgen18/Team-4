@@ -8,3 +8,15 @@ www.yahoo.com
 www.wikipedia.org
 www.ign.com
 www.uc.edu
+www.gamespot.com
+www.bing.com
+www.ubisoft.com
+www.ea.com
+www.mediamolecule.com
+www.capcom.com
+www.thq.com
+www.pokemon.com
+www.elderscrolls.com
+www.sony.com
+www.nintendo.com
+www.microsoft.com
