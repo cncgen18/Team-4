@@ -95,7 +95,6 @@ class Request implements Runnable
 		}
 		in.close();
 
-		//print result
 		System.out.println(response.toString());
 
 	}
@@ -113,6 +112,7 @@ class Request implements Runnable
 			PrintWriter fileOut = new PrintWriter(page);
 
 			String line = in.readUTF();
+			fileOut.print(line + "\n");
 			while(line !=null)
 			{
 				fileOut.print(line + "\n");

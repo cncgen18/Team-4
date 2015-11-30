@@ -12,6 +12,7 @@ public class jUnitTesting {
 		assertEquals("must return correct file name","www.google.com",tester.memLookup("www.google.com"));
 	}
 	
+	@Test
 	public void returnFSPairCacheLookup(){
 		FSPair tester = new FSPair;
 		assertEquals("must return correct file name","www.google.com",tester.cacheLookup("www.google.com"));
