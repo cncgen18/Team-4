@@ -31,6 +31,7 @@ public class Client{
 				String line = br.readLine();
 				Request r = new Request(socket, line);
 				new Thread(r).start();
+				
 
 			}
 			br.close();
@@ -65,10 +66,11 @@ class Request implements Runnable
 	{
 		this.socket = socket;
 		this.pageName = name;
+		sendGet();
 	}
-	private void sendGet(FSPair x) throws Exception {
+	private void sendGet() throws Exception {
 
-		String url = x.getName();
+		String url = this.pageName;
 		
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
