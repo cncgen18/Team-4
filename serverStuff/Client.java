@@ -68,7 +68,7 @@ class Request implements Runnable
 		this.pageName = name;
 		sendGet();
 	}
-	private void sendGet() throws Exception {
+	private static void sendGet() throws Exception {
 
 		String url = this.pageName;
 		
