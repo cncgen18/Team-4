@@ -143,7 +143,7 @@ public class Server
 			{
 				long rand1 = System.currentTimeMillis();  //Use the current time to get a random file size
 				long rand2 = System.currentTimeMillis();
-				int size = (int)((rand1 * rand2) % 10000);  //mod by 100000 to keep within range.
+				int size = (int)((rand1 * rand2) % 100000);  //mod by 100000 to keep within range.
 				while (size >100000 || size <1000) //if it's out of range
 				{
 					if (size < 1000) size*=1000; //multiply by 1K if it's too small
