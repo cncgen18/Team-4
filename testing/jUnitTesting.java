@@ -1,7 +1,7 @@
 package testing;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-import "LoggingForm.java"
+import "Server.java"
 import "FsPair.java"
 
 public class jUnitTesting {
